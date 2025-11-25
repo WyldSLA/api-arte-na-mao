@@ -1,0 +1,256 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Enums
+enum TipoUsuario {
+  CLIENTE
+  ARTISTA
+}
+
+enum Genero {
+  MASCULINO
+  FEMININO
+  OUTRO
+  PREFIRO_NAO_DIZER
+}
+
+enum StatusPedido {
+  CONFIRMADO
+  ENTREGUE
+  RETIRADA
+  CANCELADA
+}
+
+enum TipoAdesao {
+  VISITANTE
+  EXPOSITOR
+}
+
+// Entidade Usuário (Superclasse)
+model Usuario {
+  id               String    @id @default(uuid())
+  tipoUsuario      TipoUsuario @map("tipo_usuario")
+  email            String    @unique
+  senha            String
+  banner           String?
+  tags             String[]  @default([])
+  descricao        String?   @db.Text
+  dataCriacao      DateTime  @default(now()) @map("data_criacao")
+  dataAtualizacao  DateTime  @updatedAt @map("data_atualizacao")
+  
+  // Relacionamentos
+  cliente          Cliente?
+  artista          Artista?
+  carrinhos        Carrinho[]
+  compras          Compra[]
+  favoritos        Favorito[]
+  comentarios      Comentario[]
+  eventosParticipa EventoParticipante[]
+
+  @@map("usuarios")
+}
+
+// Entidade Cliente (Subclasse)
+model Cliente {
+  id              String    @id @default(uuid())
+  idUsuario       String    @unique @map("id_usuario")
+  nome            String
+  cpf             String    @unique
+  genero          Genero
+  telefone        String
+  dataNascimento  DateTime  @map("data_nascimento")
+  idade           Int
+  dataCriacao     DateTime  @default(now()) @map("data_criacao")
+  dataAtualizacao DateTime  @updatedAt @map("data_atualizacao")
+  fotoCliente     String?   @map("foto_cliente")
+  
+  // Relacionamentos
+  usuario         Usuario   @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+  endereco        Endereco?
+
+  @@map("clientes")
+}
+
+// Entidade Artista (Subclasse)
+model Artista {
+  id              String    @id @default(uuid())
+  idUsuario       String    @unique @map("id_usuario")
+  nome            String
+  cnpj            String?   @unique
+  cpf             String    @unique
+  genero          Genero
+  telefone        String
+  dataNascimento  DateTime  @map("data_nascimento")
+  idade           Int
+  dataCriacao     DateTime  @default(now()) @map("data_criacao")
+  dataAtualizacao DateTime  @updatedAt @map("data_atualizacao")
+  fotoArtista     String?   @map("foto_artista")
+  
+  // Relacionamentos
+  usuario         Usuario   @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+  endereco        Endereco?
+  obras           Obra[]
+  compras         Compra[]
+  eventosCriados  Evento[]  @relation("EventoCriador")
+  eventosParticipa EventoParticipante[]
+
+  @@map("artistas")
+}
+
+// Entidade Carrinho
+model Carrinho {
+  id          String   @id @default(uuid())
+  idObra      String   @map("id_obra")
+  idUsuario   String   @map("id_usuario")
+  dataCriacao DateTime @default(now()) @map("data_criacao")
+  
+  // Relacionamentos
+  obra        Obra     @relation(fields: [idObra], references: [id], onDelete: Cascade)
+  usuario     Usuario  @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+
+  @@unique([idUsuario, idObra])
+  @@map("carrinhos")
+}
+
+// Entidade Obra
+model Obra {
+  id              String    @id @default(uuid())
+  idArtista       String    @map("id_artista")
+  tipoObra        String    @map("tipo_obra")
+  nome            String
+  descricao       String    @db.Text
+  preco           Decimal   @db.Decimal(10, 2)
+  disponivel      Boolean   @default(true)
+  vendida         Boolean   @default(false)
+  dataCriacao     DateTime  @default(now()) @map("data_criacao")
+  dataAtualizacao DateTime  @updatedAt @map("data_atualizacao")
+  fotoObra        String?   @map("foto_obra")
+  
+  // Relacionamentos
+  artista         Artista   @relation(fields: [idArtista], references: [id], onDelete: Cascade)
+  carrinhos       Carrinho[]
+  compras         Compra[]
+  favoritos       Favorito[]
+  comentarios     Comentario[]
+
+  @@map("obras")
+}
+
+// Entidade Favorito (NOVO)
+model Favorito {
+  id          String   @id @default(uuid())
+  idUsuario   String   @map("id_usuario")
+  idObra      String   @map("id_obra")
+  dataCriacao DateTime @default(now()) @map("data_criacao")
+  
+  // Relacionamentos
+  usuario     Usuario  @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+  obra        Obra     @relation(fields: [idObra], references: [id], onDelete: Cascade)
+
+  @@unique([idUsuario, idObra])
+  @@map("favoritos")
+}
+
+// Entidade Comentário (NOVO)
+model Comentario {
+  id              String   @id @default(uuid())
+  idUsuario       String   @map("id_usuario")
+  idObra          String   @map("id_obra")
+  conteudo        String   @db.Text
+  dataCriacao     DateTime @default(now()) @map("data_criacao")
+  dataAtualizacao DateTime @updatedAt @map("data_atualizacao")
+  
+  // Relacionamentos
+  usuario         Usuario  @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+  obra            Obra     @relation(fields: [idObra], references: [id], onDelete: Cascade)
+
+  @@map("comentarios")
+}
+
+// Entidade Compra
+model Compra {
+  id              String       @id @default(uuid())
+  idObra          String       @map("id_obra")
+  idArtista       String       @map("id_artista")
+  idUsuario       String       @map("id_usuario")
+  valorTotal      Decimal      @map("valor_total") @db.Decimal(10, 2)
+  formaPagamento  String       @map("forma_pagamento")
+  dataPedido      DateTime     @default(now()) @map("data_pedido")
+  tipoEntrega     String       @map("tipo_entrega")
+  statusPedido    StatusPedido @default(CONFIRMADO) @map("status_pedido")
+  dataAtualizacao DateTime     @updatedAt @map("data_atualizacao")
+  
+  // Relacionamentos
+  obra            Obra         @relation(fields: [idObra], references: [id])
+  artista         Artista      @relation(fields: [idArtista], references: [id])
+  usuario         Usuario      @relation(fields: [idUsuario], references: [id])
+
+  @@map("compras")
+}
+
+// Entidade Endereço
+model Endereco {
+  id        String   @id @default(uuid())
+  idCliente String?  @unique @map("id_cliente")
+  idArtista String?  @unique @map("id_artista")
+  idEvento  String?  @unique @map("id_evento")
+  rua       String
+  numero    String
+  bairro    String
+  estado    String
+  pais      String   @default("Brasil")
+  cep       String
+  
+  // Relacionamentos
+  cliente   Cliente? @relation(fields: [idCliente], references: [id], onDelete: Cascade)
+  artista   Artista? @relation(fields: [idArtista], references: [id], onDelete: Cascade)
+  evento    Evento?  @relation(fields: [idEvento], references: [id], onDelete: Cascade)
+
+  @@map("enderecos")
+}
+
+// Entidade Evento
+model Evento {
+  id              String    @id @default(uuid())
+  idArtistaCriador String   @map("id_artista_criador")
+  nome            String
+  tipoEvento      String    @map("tipo_evento")
+  descricao       String    @db.Text
+  dataEvento      DateTime  @map("data_evento")
+  precoAdesao     Decimal?  @map("preco_adesao") @db.Decimal(10, 2)
+  gratuito        Boolean   @default(false)
+  capacidadeMaxima Int?     @map("capacidade_maxima")
+  dataCriacao     DateTime  @default(now()) @map("data_criacao")
+  dataAtualizacao DateTime  @updatedAt @map("data_atualizacao")
+  
+  // Relacionamentos
+  artistaCriador  Artista   @relation("EventoCriador", fields: [idArtistaCriador], references: [id])
+  endereco        Endereco?
+  participantes   EventoParticipante[]
+
+  @@map("eventos")
+}
+
+// Tabela intermediária para relacionamento N:N entre Usuário e Evento
+model EventoParticipante {
+  id          String      @id @default(uuid())
+  idEvento    String      @map("id_evento")
+  idArtista   String?     @map("id_artista")
+  idUsuario   String      @map("id_usuario")
+  tipoAdesao  TipoAdesao  @map("tipo_adesao")
+  pago        Boolean     @default(false)
+  dataCriacao DateTime    @default(now()) @map("data_criacao")
+  
+  // Relacionamentos
+  evento      Evento      @relation(fields: [idEvento], references: [id], onDelete: Cascade)
+  artista     Artista?    @relation(fields: [idArtista], references: [id])
+  usuario     Usuario     @relation(fields: [idUsuario], references: [id])
+
+  @@unique([idEvento, idUsuario])
+  @@map("eventos_participantes")
+}
