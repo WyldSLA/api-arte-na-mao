@@ -37,9 +37,6 @@ model Usuario {
   tipoUsuario      TipoUsuario @map("tipo_usuario")
   email            String    @unique
   senha            String
-  banner           String?
-  tags             String[]  @default([])
-  descricao        String?   @db.Text
   dataCriacao      DateTime  @default(now()) @map("data_criacao")
   dataAtualizacao  DateTime  @updatedAt @map("data_atualizacao")
   
@@ -68,6 +65,9 @@ model Cliente {
   dataCriacao     DateTime  @default(now()) @map("data_criacao")
   dataAtualizacao DateTime  @updatedAt @map("data_atualizacao")
   fotoCliente     String?   @map("foto_cliente")
+  banner          String?
+  tags            String[]  @default([])
+  descricao       String?   @db.Text
   
   // Relacionamentos
   usuario         Usuario   @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
@@ -90,6 +90,9 @@ model Artista {
   dataCriacao     DateTime  @default(now()) @map("data_criacao")
   dataAtualizacao DateTime  @updatedAt @map("data_atualizacao")
   fotoArtista     String?   @map("foto_artista")
+  banner          String?
+  tags            String[]  @default([])
+  descricao       String?   @db.Text
   
   // Relacionamentos
   usuario         Usuario   @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
