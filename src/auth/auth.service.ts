@@ -10,6 +10,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { TokenService } from '@/token/token.service';
 import { LoginDto } from './dto/login.dto';
 import { AuthMapper } from './mappers/auth.mapper';
+import { AuthMeResponseDto } from './dto/auth-me-response.dto';
 
 @Injectable()
 export class AuthService {
@@ -58,6 +59,14 @@ export class AuthService {
         profileId,
       ),
     };
+  }
+
+  async getUser(userId: string): Promise<AuthMeResponseDto>{
+    const user = await this.authRepository.findUserById(userId);
+    if (!user) throw new NotFoundException('Usuário não encontrado.');
+
+    return AuthMapper.toAuthMeResponse(user);
+
   }
 
   private async getProfileId(userId: string): Promise<string | null> {

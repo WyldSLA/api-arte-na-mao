@@ -64,8 +64,8 @@ model Cliente {
   idade           Int
   dataCriacao     DateTime  @default(now()) @map("data_criacao")
   dataAtualizacao DateTime  @updatedAt @map("data_atualizacao")
-  fotoCliente     String?   @map("foto_cliente")
-  banner          String?
+  fotoAvatar      String?   @map("foto_avatar")
+  banner          String?   @map("foto_banner")
   tags            String[]  @default([])
   descricao       String?   @db.Text
   
@@ -89,8 +89,8 @@ model Artista {
   idade           Int
   dataCriacao     DateTime  @default(now()) @map("data_criacao")
   dataAtualizacao DateTime  @updatedAt @map("data_atualizacao")
-  fotoArtista     String?   @map("foto_artista")
-  banner          String?
+  fotoAvatar      String?   @map("foto_avatar")
+  banner          String?   @map("foto_banner")
   tags            String[]  @default([])
   descricao       String?   @db.Text
   
