@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -11,6 +12,7 @@ import { TokenService } from '@/token/token.service';
 import { LoginDto } from './dto/login.dto';
 import { AuthMapper } from './mappers/auth.mapper';
 import { AuthMeResponseDto } from './dto/auth-me-response.dto';
+import { Tokens } from './interfaces/tokens.interface';
 
 @Injectable()
 export class AuthService {
@@ -19,7 +21,7 @@ export class AuthService {
     private readonly tokenService: TokenService,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<{ accessToken: string }> {
+  async create(createUserDto: CreateUserDto): Promise<Tokens> {
     const existingUser = await this.authRepository.findByEmail(
       createUserDto.email,
     );
@@ -34,16 +36,22 @@ export class AuthService {
     const newUser = await this.authRepository.create(userData, perfilData);
     const profileId = await this.getProfileId(newUser.id);
 
-    return {
-      accessToken: await this.tokenService.generateToken(
-        newUser.id,
-        newUser.tipoUsuario,
-        profileId,
-      ),
-    };
+    const tokens = await this.tokenService.generateToken(
+      newUser.id,
+      newUser.tipoUsuario,
+      profileId,
+    );
+
+    const hashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 10);
+    await this.authRepository.updateRefreshToken(
+      newUser.id,
+      hashedRefreshToken,
+    );
+
+    return tokens;
   }
 
-  async login(loginDto: LoginDto): Promise<{ accessToken: string }> {
+  async login(loginDto: LoginDto): Promise<Tokens> {
     const user = await this.authRepository.findByEmail(loginDto.email);
     if (!user) throw new NotFoundException('Usuário não encontrado.');
 
@@ -52,21 +60,56 @@ export class AuthService {
 
     const profileId = await this.getProfileId(user.id);
 
-    return {
-      accessToken: await this.tokenService.generateToken(
-        user.id,
-        user.tipoUsuario,
-        profileId,
-      ),
-    };
+    const tokens = await this.tokenService.generateToken(
+      user.id,
+      user.tipoUsuario,
+      profileId,
+    );
+
+    const hashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 10);
+    await this.authRepository.updateRefreshToken(user.id, hashedRefreshToken);
+
+    return tokens;
   }
 
-  async getUser(userId: string): Promise<AuthMeResponseDto>{
+  async authMe(userId: string): Promise<AuthMeResponseDto> {
     const user = await this.authRepository.findUserById(userId);
     if (!user) throw new NotFoundException('Usuário não encontrado.');
 
     return AuthMapper.toAuthMeResponse(user);
+  }
 
+  async refreshTokens(userId: string, refreshToken: string): Promise<Tokens> {
+    const user = await this.authRepository.findUserById(userId);
+    if (!user || !user.refreshToken) {
+      throw new ForbiddenException('Acesso negado');
+    }
+
+    const refreshTokenMatches = await bcrypt.compare(
+      refreshToken,
+      user.refreshToken,
+    );
+
+    if (!refreshTokenMatches) {
+      throw new ForbiddenException('Acesso negado');
+    }
+
+    const profileId = await this.getProfileId(user.id);
+
+    const tokens = await this.tokenService.generateToken(
+      user.id,
+      user.tipoUsuario,
+      profileId,
+    );
+
+    const hashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 10);
+    await this.authRepository.updateRefreshToken(user.id, hashedRefreshToken);
+
+    return tokens;
+  }
+
+  async logout(userId: string): Promise<void> {
+    await this.authRepository.updateRefreshToken(userId, null);
   }
 
   private async getProfileId(userId: string): Promise<string | null> {

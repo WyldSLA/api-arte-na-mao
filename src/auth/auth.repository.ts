@@ -70,4 +70,18 @@ export class AuthRepository {
       include: { cliente: true, artista: true },
     });
   }
+
+  async updateRefreshToken(
+    userId: string,
+    refreshToken: string | null,
+  ): Promise<void> {
+    await this.prismaService.usuario.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        refreshToken,
+      },
+    });
+  }
 }

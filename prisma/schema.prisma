@@ -39,7 +39,8 @@ model Usuario {
   senha            String
   dataCriacao      DateTime  @default(now()) @map("data_criacao")
   dataAtualizacao  DateTime  @updatedAt @map("data_atualizacao")
-  
+  // Refresh Token (autenticação)
+  refreshToken     String?   @map("refresh_token")
   // Relacionamentos
   cliente          Cliente?
   artista          Artista?
@@ -48,6 +49,7 @@ model Usuario {
   favoritos        Favorito[]
   comentarios      Comentario[]
   eventosParticipa EventoParticipante[]
+
 
   @@map("usuarios")
 }
