@@ -20,7 +20,6 @@ import { PassportModule } from '@nestjs/passport';
   providers: [
     AuthService,
     AuthRepository,
-    PrismaModule,
     AccessTokenStrategy,
     RefreshTokenStrategy,
   ],

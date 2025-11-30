@@ -25,7 +25,7 @@ export class AuthController {
     return {
       status: 'success',
       data: tokens,
-      message: 'Usuário cadastrado com sucesso.',
+      message: 'Usuário cadastrado com sucesso',
     };
   }
 
@@ -36,7 +36,7 @@ export class AuthController {
     return {
       status: 'success',
       data: tokens,
-      message: 'Login realizado com sucesso.',
+      message: 'Login realizado com sucesso',
     };
   }
 
@@ -47,7 +47,7 @@ export class AuthController {
     return {
       status: 'success',
       data: userData,
-      message: 'Dados do usuário retornado com sucesso.',
+      message: 'Dados do usuário retornado com sucesso',
     };
   }
 
@@ -73,7 +73,7 @@ export class AuthController {
     await this.authService.logout(userId);
     return {
       status: 'success',
-      message: 'Logout feito com sucesso.',
+      message: 'Logout feito com sucesso',
     };
   }
 }

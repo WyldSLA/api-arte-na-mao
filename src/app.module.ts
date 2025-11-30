@@ -3,6 +3,7 @@ import { AuthModule } from '@/auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './database/prisma.module';
 import { TokenModule } from './token/token.module';
+import { ObraModule } from './obra/obra.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -11,6 +12,7 @@ import { TokenModule } from './token/token.module';
     AuthModule,
     PrismaModule,
     TokenModule,
+    ObraModule,
   ],
   controllers: [],
   providers: [],
